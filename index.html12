@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Green Farmer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+  margin:0;
+  background:#14532d;
+  font-family:Arial;
+  color:#ecfdf5;
+  text-align:center;
+}
+canvas{
+  background:linear-gradient(#4ade80,#166534);
+  display:block;
+  margin:auto;
+  border:3px solid #064e3b;
+}
+.hud{
+  display:flex;
+  justify-content:space-around;
+  padding:8px;
+  background:#064e3b;
+}
+button{
+  padding:12px 18px;
+  margin:6px;
+  font-size:16px;
+  border:none;
+  border-radius:8px;
+  background:#22c55e;
+  font-weight:bold;
+}
+.controls{
+  display:flex;
+  justify-content:center;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🌱 GREEN FARMER</h2>
+
+<div class="hud">
+  <div>❤️ <span id="life">3</span></div>
+  <div>⚡ <span id="energy">100</span></div>
+  <div>🌽 <span id="score">0</span></div>
+  <div>🏆 <span id="level">1</span></div>
+</div>
+
+<canvas id="game" width="360" height="520"></canvas>
+
+<div class="controls">
+  <button 
+    onmousedown="harvesting=true" 
+    onmouseup="harvesting=false" 
+    ontouchstart="harvesting=true" 
+    ontouchend="harvesting=false"
+  >🌾</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let life=3, energy=100, score=0, level=1;
+let gameOver=false;
+let harvesting=false;
+
+const farmer={ x:160, y:460, w:40, h:40, speed:6 };
+const items=[];
+const types=[
+  {t:"crop",c:"#22c55e",s:3},
+  {t:"seed",c:"#fde047",s:1},
+  {t:"weed",c:"#166534",s:-2},
+  {t:"bug",c:"#dc2626",d:1},
+  {t:"gold",c:"#facc15",s:6}
+];
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft") farmer.x-=farmer.speed;
+  if(e.key==="ArrowRight") farmer.x+=farmer.speed;
+  if(e.key===" ") harvesting=true;
+});
+document.addEventListener("keyup",e=>{
+  if(e.key===" ") harvesting=false;
+});
+
+function spawn(){
+  if(Math.random()<0.6){ // 60% chance spawn
+    const t=types[Math.floor(Math.random()*types.length)];
+    items.push({ ...t, x:Math.random()*(canvas.width-30), y:-30, size:30 });
+  }
+}
+
+function harvest(){
+  if(energy<=0||gameOver) return;
+  energy-=6;
+
+  items.forEach(i=>{
+    const hit = i.x+i.size > farmer.x-20 &&   // harvest range 20px
+                i.x < farmer.x+farmer.w+20 &&
+                i.y+i.size > farmer.y-20 &&
+                i.y < farmer.y+farmer.h+20;
+
+    if(hit){
+      if(i.d) life-=i.d;
+      else score+=i.s||0;
+      i.dead=true;
+    }
+  });
+
+  if(score<0) score=0;
+  if(score>=level*10) level++;
+}
+
+function update(){
+  if(harvesting && energy>0 && !gameOver) harvest();
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  items.forEach(i=>{
+    i.y+=1.5+level*0.4;
+    ctx.fillStyle=i.c;
+    ctx.beginPath();
+    ctx.arc(i.x+i.size/2,i.y+i.size/2,i.size/2,0,Math.PI*2);
+    ctx.fill();
+
+    if(i.y>canvas.height){
+      if(i.t!=="weed") life--;
+      i.dead=true;
+    }
+  });
+
+  for(let i=items.length-1;i>=0;i--)
+    if(items[i].dead) items.splice(i,1);
+
+  ctx.fillStyle="#fbbf24";
+  ctx.fillRect(farmer.x,farmer.y,farmer.w,farmer.h);
+
+  document.getElementById("life").innerText=life;
+  document.getElementById("energy").innerText=energy;
+  document.getElementById("score").innerText=score;
+  document.getElementById("level").innerText=level;
+
+  if(life<=0){
+    ctx.fillStyle="#f87171";
+    ctx.font="28px Arial";
+    ctx.fillText("GAME OVER",90,260);
+    gameOver=true;
+    return;
+  }
+
+  requestAnimationFrame(update);
+}
+
+// Coin/item spawn প্রতি 5 সেকেন্ডে
+setInterval(()=>{ if(!gameOver) spawn(); },5000);
+setInterval(()=>{ energy=Math.min(100,energy+2); },1000);
+
+update();
+</script>
+
+</body>
+</html>
