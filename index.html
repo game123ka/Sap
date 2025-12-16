@@ -1,0 +1,63 @@
+<div class="controls">
+  <button 
+    onmousedown="harvesting=true" 
+    onmouseup="harvesting=false" 
+    ontouchstart="harvesting=true" 
+    ontouchend="harvesting=false"
+  >🌾</button>
+</div>
+
+<script>
+let harvesting = false; // নতুন ভ্যারিয়েবল
+
+document.addEventListener("keydown", e=>{
+  if(e.key===" ") harvesting = true;
+});
+document.addEventListener("keyup", e=>{
+  if(e.key===" ") harvesting = false;
+});
+
+// আগের draw() ফাংশন পরিবর্তন করে একটা update() বানাচ্ছি
+function update(){
+  if(harvesting && energy>0 && !gameOver) harvest();
+
+  // সব আগের draw()-এর কোড এখানে রাখতে হবে
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  items.forEach(i=>{
+    i.y+=1.5+level*0.4;
+    ctx.fillStyle=i.c;
+    ctx.beginPath();
+    ctx.arc(i.x+i.size/2,i.y+i.size/2,i.size/2,0,Math.PI*2);
+    ctx.fill();
+
+    if(i.y>canvas.height){
+      if(i.t!=="weed") life--;
+      i.dead=true;
+    }
+  });
+
+  for(let i=items.length-1;i>=0;i--)
+    if(items[i].dead) items.splice(i,1);
+
+  ctx.fillStyle="#fbbf24";
+  ctx.fillRect(farmer.x,farmer.y,farmer.w,farmer.h);
+
+  document.getElementById("life").innerText=life;
+  document.getElementById("energy").innerText=energy;
+  document.getElementById("score").innerText=score;
+  document.getElementById("level").innerText=level;
+
+  if(life<=0){
+    ctx.fillStyle="#f87171";
+    ctx.font="28px Arial";
+    ctx.fillText("GAME OVER",90,260);
+    gameOver=true;
+    return;
+  }
+
+  requestAnimationFrame(update);
+}
+
+update(); // এখন draw() এর জায়গায় update() কল হচ্ছে
+</script>
